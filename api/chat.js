@@ -12,10 +12,9 @@ module.exports = async function handler(req, res) {
     }
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
     if (!OPENAI_API_KEY) {
-      return sendJson(res, 500, { error: 'Falta configurar OPENAI_API_KEY.' });
+      return sendJson(res, 500, { error: 'Falta configurar OPENAI_API_KEY en Vercel.' });
     }
 
     const message = req.body?.message;
@@ -35,7 +34,7 @@ module.exports = async function handler(req, res) {
         Authorization: `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
+        model: 'gpt-4o-mini',
         temperature: 0.4,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -45,12 +44,22 @@ module.exports = async function handler(req, res) {
     });
 
     if (!response.ok) {
-      return sendJson(res, 500, { error: `Error de OpenAI: ${await response.text()}` });
+      const errorText = await response.text();
+      return sendJson(res, 500, { error: `Error de OpenAI: ${errorText}` });
     }
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || 'No pude generar una respuesta.';
+
+    const reply =
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content
+        ? data.choices[0].message.content
+        : 'No pude generar una respuesta.';
+
     return sendJson(res, 200, { reply });
+
   } catch (error) {
     return sendJson(res, 500, { error: `Error interno: ${error.message}` });
   }
