@@ -1,60 +1,122 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BIT Chat Demo | Martín Urtasun</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css" />
+<meta charset="UTF-8">
+<title>Product Owner BIT – Plan Asistente Estratégico</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0b1220;
+  color: white;
+  display: flex;
+  justify-content: center;
+}
+
+#chat {
+  width: 400px;
+  margin-top: 40px;
+}
+
+.message {
+  margin: 10px 0;
+}
+
+.user {
+  color: #00ffaa;
+}
+
+.bot {
+  color: #00ccff;
+}
+
+input {
+  width: 300px;
+  padding: 10px;
+}
+
+button {
+  padding: 10px;
+}
+</style>
+
 </head>
 <body>
-  <main class="layout">
-    <section class="phone">
-      <header class="topbar">
-        <div class="avatar">MU</div>
-        <div>
-          <h1>Martín Urtasun · BIT</h1>
-          <p>En línea</p>
-        </div>
-      </header>
 
-      <section id="chat" class="chat"></section>
+<div id="chat"></div>
 
-      <div class="quick-actions" id="quickActions">
-        <button data-question="Dame un resumen ejecutivo del plan.">Resumen</button>
-        <button data-question="¿Cuáles son los OKRs clave?"><span>OKRs</span></button>
-        <button data-question="Sugerime un roadmap de 90 días.">Roadmap 90 días</button>
-      </div>
+<br>
 
-      <form id="form" class="composer">
-        <input id="message" placeholder="Escribí un mensaje" autocomplete="off" required />
-        <button type="submit">Enviar</button>
-      </form>
-    </section>
+<input id="input" placeholder="Escribí tu mensaje">
+<button onclick="send()">Enviar</button>
 
-    <aside class="panel">
-      <h2>Configuración rápida</h2>
-      <p>Compartí esta demo por URL o QR.</p>
-      <canvas id="qr"></canvas>
-      <p class="small" id="urlText"></p>
+<script>
 
-      <details>
-        <summary>Actualizar plan (editable)</summary>
-        <p class="small">Pegá una nueva versión del plan y guardá para impactar al instante en las respuestas.</p>
-        <textarea id="planText" rows="12"></textarea>
-        <input id="adminToken" placeholder="ADMIN_TOKEN (si aplica)" />
-        <button id="savePlan">Guardar plan</button>
-        <label class="file-upload">
-          Cargar desde .txt
-          <input type="file" id="planFile" accept=".txt,.md" />
-        </label>
-      </details>
-    </aside>
-  </main>
+function addMessage(text, sender) {
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-  <script src="/app.js"></script>
+  const chat = document.getElementById("chat");
+
+  const div = document.createElement("div");
+
+  div.className = "message " + sender;
+
+  div.innerText = text;
+
+  chat.appendChild(div);
+
+}
+
+async function send() {
+
+  const input = document.getElementById("input");
+
+  const message = input.value;
+
+  if (!message) return;
+
+  addMessage("Vos: " + message, "user");
+
+  input.value = "";
+
+  try {
+
+    const response = await fetch("/api/chat", {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type": "application/json"
+
+      },
+
+      body: JSON.stringify({
+
+        message: message,
+
+        name: "Visitante"
+
+      })
+
+    });
+
+    const data = await response.json();
+
+    addMessage("BIT: " + data.reply, "bot");
+
+  }
+
+  catch (error) {
+
+    addMessage("Error conectando con el asistente.", "bot");
+
+  }
+
+}
+
+addMessage("BIT: Hola. Soy el asistente estratégico de Martín Urtasun.", "bot");
+
+</script>
+
 </body>
 </html>
