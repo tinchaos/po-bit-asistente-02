@@ -1,68 +1,50 @@
-console.log("🔥 CHAT API EJECUTÁNDOSE 🔥");
-const { getPlan } = require('../lib/plan-store');
-const { buildSystemPrompt } = require('../lib/prompt');
-
-function sendJson(res, status, data) {
-  res.status(status).json(data);
-}
+const OpenAI = require("openai");
 
 module.exports = async function handler(req, res) {
   try {
-    if (req.method !== 'POST') {
-      return sendJson(res, 405, { error: 'Método no permitido.' });
-    }
-
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-    if (!OPENAI_API_KEY) {
-      return sendJson(res, 500, { error: 'Falta configurar OPENAI_API_KEY en Vercel.' });
-    }
-
-    const message = req.body?.message;
-    const userName = req.body?.userName;
-
-    if (typeof message !== 'string' || !message.trim()) {
-      return sendJson(res, 400, { error: 'Mensaje inválido.' });
-    }
-
-    const plan = await getPlan();
-    const systemPrompt = buildSystemPrompt({ userName, plan });
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.4,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ]
-      })
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return sendJson(res, 500, { error: `Error de OpenAI: ${errorText}` });
-    }
+    // leer correctamente el body
+    const { message, name } = req.body || {};
 
-    const data = await response.json();
+    // fallback por si viene vacío
+    const userMessage = message || "Decime hola";
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Sos el Asistente Estratégico Ejecutivo de Martín Xavier Urtasun Rubio. Respondé de forma profesional y estratégica.",
+        },
+        {
+          role: "user",
+          content: `Visitante: ${name || "Visitante"}\nPregunta: ${userMessage}`,
+        },
+      ],
+      max_tokens: 300,
+    });
 
     const reply =
-      data.choices &&
-      data.choices[0] &&
-      data.choices[0].message &&
-      data.choices[0].message.content
-        ? data.choices[0].message.content
-        : 'No pude generar una respuesta.';
+      completion &&
+      completion.choices &&
+      completion.choices[0] &&
+      completion.choices[0].message &&
+      completion.choices[0].message.content
+        ? completion.choices[0].message.content
+        : "No se pudo generar respuesta.";
 
-    return sendJson(res, 200, { reply });
-
+    return res.status(200).json({
+      reply: reply,
+    });
   } catch (error) {
-    return sendJson(res, 500, { error: `Error interno: ${error.message}` });
+    console.error("ERROR OPENAI:", error);
+
+    return res.status(200).json({
+      reply: "Error interno, pero el servidor funciona.",
+    });
   }
 };
-
