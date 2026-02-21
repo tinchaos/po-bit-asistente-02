@@ -1,28 +1,53 @@
 module.exports = async function handler(req, res) {
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Metodo no permitido"
+    });
+  }
+
   try {
-    // Solo aceptamos POST
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Método no permitido." });
+
+    const body = req.body || {};
+    const message = body.message || "";
+    const name = body.name || "Visitante";
+
+    if (!message) {
+      return res.status(400).json({
+        error: "Mensaje requerido"
+      });
     }
 
-    // Parse body (a veces viene como string)
-    let body = req.body;
-    if (typeof body === "string") {
-      try { body = JSON.parse(body); } catch (e) { body = {}; }
-    }
+    const reply = `Gracias ${name} por tu consulta.
 
-    const message = (body && body.message) ? String(body.message) : "(vacío)";
-    const name = (body && body.name) ? String(body.name) : "Visitante";
+Soy el asistente estratégico del plan de Martín Urtasun para liderar la evolución de BIT hacia una plataforma conversacional basada en IA Generativa.
+
+El plan estratégico incluye:
+
+• Transformar BIT de un bot guiado a un asistente conversacional real  
+• Integrarlo completamente con las Tribus y Customer Journeys  
+• Convertirlo en un canal transaccional conectado a APIs  
+• Mejorar métricas clave como CSAT y adopción digital  
+• Escalar BIT como el principal canal de interacción digital del banco  
+
+¿Querés que te cuente el roadmap de 90 días, los OKRs o la arquitectura técnica?`;
 
     return res.status(200).json({
-      reply: `✅ Conectado OK. Recibí de ${name}: "${message}"`,
+      reply: reply
     });
-  } catch (e) {
-    return res.status(200).json({
-      reply: "✅ Backend respondió, pero hubo un error interno.",
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Error interno del servidor"
     });
+
   }
+
 };
   }
 };
+
 
